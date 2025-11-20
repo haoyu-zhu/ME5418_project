@@ -2,7 +2,6 @@ import numpy as np
 import gymnasium as gym
 import random
 import viewer_part
-import time
 
 MAP_RANGE, DEPORT_DISTANCE, DEPORT_MARGIN = 0.5, 0.25, 0.25
 STD_DEV = 0.25
@@ -64,11 +63,7 @@ class PointsEnv(gym.Env):
                     return False
         return True
 
-    def GenerateGraph(self, tasks_number=100, seed=None):   # Generate map warehouse points and mission points
-        if seed is None:
-            # 用系统时间或 os.urandom 生成一个随机整数 seed
-            seed = int(time.time() * 1e6) % (2**32 - 1)
-            #print(seed)
+    def GenerateGraph(self, tasks_number=100, seed=34):   # Generate map warehouse points and mission points
         state = np.random.get_state()
         np.random.seed(seed)
 
@@ -229,7 +224,7 @@ class PointsEnv(gym.Env):
 
         return observation, reward, self.done
 
-    def render(self):
+    def render(self, keep_open: bool = True):
         if self.viewer is None:
             self.viewer = viewer_part.Viewer()
 
@@ -244,6 +239,15 @@ class PointsEnv(gym.Env):
         # Wait for animation to end
         while self.viewer.running:
             self.viewer.update()  # Manually execute a frame (automatically trigger update)
+        if keep_open and hasattr(self, "viewer") and self.viewer is not None:
+            if hasattr(self.viewer, "hold"):
+                self.viewer.hold()
+            else:
+                import time
+                print("渲染完成，窗口保持开启；按 Ctrl+C 退出")
+                while getattr(self.viewer, "running", True):
+                    self.viewer.update()
+                    time.sleep(0.01)
 
 if __name__ == "__main__":
     env = PointsEnv(tasks_number=100,max_distance=3.0)
